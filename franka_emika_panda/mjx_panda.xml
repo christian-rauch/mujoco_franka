@@ -115,6 +115,10 @@
     <mesh file="finger_1.obj"/>
   </asset>
 
+  <visual>
+    <global offwidth="1280" offheight="720"/>
+  </visual>
+
   <worldbody>
     <light name="top" pos="0 0 2" mode="trackcom"/>
     <body name="link0" childclass="panda">
@@ -207,6 +211,16 @@
                     <geom mesh="link7_6" material="black" class="visual"/>
                     <geom mesh="link7_7" material="white" class="visual"/>
                     <geom mesh="link7_c" class="collision"/>
+                    <camera
+                      name="end_effector_camera"
+                      pos="0.060 -0.018 0.160"
+                      xyaxes="0.707 0.707 0 0.707 -0.707 0"
+                      focalpixel="749.8203735351562 749.7190551757812"
+                      principalpixel="0.7588500976562 4.8509216308594"
+                      resolution="1280 720"
+                      sensorsize="1280 720"
+                      mode="fixed"
+                    />
                     <body name="hand" pos="0 0 0.107" quat="0.9238795 0 0 -0.3826834">
                       <inertial mass="0.73" pos="-0.01 0 0.03" diaginertia="0.001 0.0025 0.0017"/>
                       <geom mesh="hand_0" material="off_white" class="visual"/>
