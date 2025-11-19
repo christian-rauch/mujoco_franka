@@ -49,8 +49,16 @@ def main(args=None):
             mujoco.mj_step(m, d)
             viewer.sync()
             cam_renderer.update_scene(d, camera=camera_name)
-            img = cam_renderer.render()
-            cv2.imshow("End Effector Camera", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+            colour = cam_renderer.render()
+            cam_renderer.enable_depth_rendering()
+            depth = cam_renderer.render()
+            cam_renderer.disable_depth_rendering()
+
+            max_depth = 1 # cutoff-depth in metre
+            colour_vis = cv2.cvtColor(colour, cv2.COLOR_RGB2BGR).astype(np.uint8)
+            depth_vis = cv2.cvtColor((depth*255)/max_depth, cv2.COLOR_RGB2BGR).astype(np.uint8)
+
+            cv2.imshow("End Effector Camera (RGB-D)", np.hstack((colour_vis, depth_vis)))
             cv2.waitKey(1)
 
 
