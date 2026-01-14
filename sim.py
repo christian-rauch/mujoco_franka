@@ -37,12 +37,14 @@ def main(args=None):
     d = mujoco.MjData(m)
 
     camera_name = "end_effector_camera"
+    cam_id = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_CAMERA, camera_name)
 
     # ready state
     ready_state = np.array([0., -1/4 * np.pi, 0., -3/4 * np.pi, 0., 1/2 * np.pi, 1/4 * np.pi])
     m.qpos0[:7] = -ready_state
 
-    cam_renderer = mujoco.Renderer(m, 720, 1280)
+    width, height = m.cam_resolution[cam_id]
+    cam_renderer = mujoco.Renderer(m, height, width)
 
     with mujoco.viewer.launch_passive(m, d) as viewer:
         while viewer.is_running():
