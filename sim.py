@@ -3,6 +3,7 @@ import mujoco
 import mujoco.viewer
 import cv2
 import numpy as np
+import open3d as o3d
 
 # "link7" -> "hand" in MJCF corresponds to "panda_link7" -> "panda_hand" in URDF
 
@@ -46,6 +47,24 @@ def main(args=None):
     width, height = m.cam_resolution[cam_id]
     cam_renderer = mujoco.Renderer(m, height, width)
 
+    # Get camera intrinsics directly from MuJoCo
+    # cam_intrinsic stores [fx, fy, ox, oy] where ox, oy are offsets from the center
+    intr = m.cam_intrinsic[cam_id]
+    fx, fy, ox, oy = intr
+    cx = width / 2 + ox
+    cy = height / 2 + oy
+    intrinsic = o3d.camera.PinholeCameraIntrinsic(width, height, fx, fy, cx, cy)
+
+    # Open3D Visualizer
+    vis = o3d.visualization.Visualizer()
+    vis.create_window("Point Cloud", width=640, height=480)
+    pcd = o3d.geometry.PointCloud()
+    frame = o3d.geometry.TriangleMesh.create_coordinate_frame(
+        size=0.5, origin=[0, 0, 0]
+    )
+    vis.add_geometry(pcd)
+    vis.add_geometry(frame)
+
     with mujoco.viewer.launch_passive(m, d) as viewer:
         while viewer.is_running():
             mujoco.mj_step(m, d)
@@ -56,12 +75,31 @@ def main(args=None):
             depth = cam_renderer.render()
             cam_renderer.disable_depth_rendering()
 
-            max_depth = 1 # cutoff-depth in metre
+            max_depth = 2 # cutoff-depth in metre
             colour_vis = cv2.cvtColor(colour, cv2.COLOR_RGB2BGR).astype(np.uint8)
             depth_vis = cv2.cvtColor((depth*255)/max_depth, cv2.COLOR_RGB2BGR).astype(np.uint8)
 
+            # RGB-D image
+            rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+                o3d.geometry.Image(colour),
+                o3d.geometry.Image(depth.astype(np.float32)),
+                depth_scale=1.0,
+                convert_rgb_to_intensity=False,
+            )
+
+            # back-project to point cloud
+            new_pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd, intrinsic)
+            # update point cloud data
+            pcd.points = new_pcd.points
+            pcd.colors = new_pcd.colors
+            vis.update_geometry(pcd)
+            vis.poll_events()
+            vis.update_renderer()
+
             cv2.imshow("End Effector Camera (RGB-D)", np.hstack((colour_vis, depth_vis)))
             cv2.waitKey(1)
+
+    vis.destroy_window()
 
 
 if __name__ == '__main__':
