@@ -93,6 +93,21 @@ def main(args=None):
 
             # back-project to point cloud
             new_pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd, intrinsic)
+
+            # transform point cloud from camera frame to world frame
+            T_world_cam = np.eye(4)
+            T_world_cam[:3, :3] = d.cam_xmat[cam_id].reshape(3, 3)
+            T_world_cam[:3, 3] = d.cam_xpos[cam_id]
+
+            # change from OpenCV to MuJuCo camera frame conventions:
+            # OpenCV: X right, Y down, Z forward
+            # MuJoCo: X right, Y up, Z back
+            # -> rotate around X axis, invert Y and Z axes
+            T_world_cam[:3, 1] *= -1
+            T_world_cam[:3, 2] *= -1
+
+            new_pcd.transform(T_world_cam)
+
             # update point cloud data
             pcd.points = new_pcd.points
             pcd.colors = new_pcd.colors
