@@ -4,6 +4,10 @@ import mujoco.viewer
 import cv2
 import numpy as np
 import open3d as o3d
+import os
+
+# Open3D fails to run on Wayland
+os.environ["XDG_SESSION_TYPE"] = "x11"
 
 # "link7" -> "hand" in MJCF corresponds to "panda_link7" -> "panda_hand" in URDF
 
