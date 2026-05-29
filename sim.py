@@ -69,8 +69,9 @@ def main(args=None):
             # filter by actuated degrees of freedom
             J = J[:, dof_indices]
 
-            # TODO: update joint state to minimise distance of end-effector pose to box pose
-            d.qpos[dof_indices] = qk
+            Jpos = J[:3, :]
+            qd = -np.linalg.inv(Jpos.transpose()@Jpos + 0.1 * np.eye(np.max(Jpos.shape))) @ Jpos.transpose() @ (gripper_pos-box_pos)
+            d.qpos[dof_indices] = qk + qd
 
             mujoco.mj_step(m, d)
             viewer.sync()
