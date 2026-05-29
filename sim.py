@@ -45,10 +45,14 @@ def main(args=None):
             box_rot = d.site_xmat[box_id].reshape(3, 3).copy()
             box_so3 = SO3_to_so3(box_rot)
 
+            print("box_rot", box_rot)
+
             # get current gripper pose
             gripper_pos = d.site_xpos[gripper_id].copy()
             gripper_rot = d.site_xmat[gripper_id].reshape(3, 3).copy()
             gripper_so3 = SO3_to_so3(gripper_rot)
+
+            print("gripper_rot", gripper_rot)
 
             # current joint state
             qk = d.qpos[dof_indices].copy()
@@ -69,9 +73,20 @@ def main(args=None):
             # filter by actuated degrees of freedom
             J = J[:, dof_indices]
 
-            Jpos = J[:3, :]
-            qd = -np.linalg.inv(Jpos.transpose()@Jpos + 0.1 * np.eye(np.max(Jpos.shape))) @ Jpos.transpose() @ (gripper_pos-box_pos)
-            d.qpos[dof_indices] = qk + qd
+            print("pos", gripper_pos-box_pos)
+            print("ori", gripper_so3-box_so3)
+
+            e = np.concatenate((gripper_pos, gripper_so3)) - np.concatenate((box_pos, box_so3))
+
+            print("e", e)
+
+            # Jpos = J[:3, :]
+            # qd = -np.linalg.inv(Jpos.transpose()@Jpos + 0.1 * np.eye(np.max(Jpos.shape))) @ Jpos.transpose() @ (gripper_pos-box_pos)
+
+            qd = -np.linalg.inv(J.transpose()@J + 0.1 * np.eye(np.max(J.shape))) @ J.transpose() @ e
+
+            # d.qpos[dof_indices] = qk + qd
+            d.qpos[dof_indices] = qk
 
             mujoco.mj_step(m, d)
             viewer.sync()
