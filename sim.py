@@ -3,6 +3,21 @@ import mujoco
 import mujoco.viewer
 import numpy as np
 
+def SO3_to_so3(R):
+    theta = np.arccos((np.trace(R) - 1) / 2)
+    if np.isclose(theta, 0):
+        return np.array([0, 0, 0])
+    v = np.array([
+        R[2, 1] - R[1, 2],
+        R[0, 2] - R[2, 0],
+        R[1, 0] - R[0, 1],
+    ])
+    vn = np.linalg.norm(v)
+    if np.isclose(vn, 0):
+        return np.array([0, 0, 0])
+    v /= vn
+    return v
+
 
 def main(args=None):
     m = mujoco.MjModel.from_xml_path("franka_emika_panda/mjx_single_cube.xml")
@@ -28,10 +43,12 @@ def main(args=None):
             # get current box pose
             box_pos = d.site_xpos[box_id].copy()
             box_rot = d.site_xmat[box_id].reshape(3, 3).copy()
+            box_so3 = SO3_to_so3(box_rot)
 
             # get current gripper pose
             gripper_pos = d.site_xpos[gripper_id].copy()
             gripper_rot = d.site_xmat[gripper_id].reshape(3, 3).copy()
+            gripper_so3 = SO3_to_so3(gripper_rot)
 
             # current joint state
             qk = d.qpos[dof_indices].copy()
